@@ -113,7 +113,7 @@ $ /usr/share/bcc/tools/memleak -a -p $(pidof app)
 
 > Swap 说白了就是把一块磁盘空间或者一个本地文件（以下讲解以磁盘为例），当成内存来使用。它包括换出和换入两个过程。
 
-![https://static001.geekbang.org/resource/image/c1/20/c1054f1e71037795c6f290e670b29120.png]()
+![内存阈值](img/内存阈值.png)
 
 2. 涉及到的命令
 
