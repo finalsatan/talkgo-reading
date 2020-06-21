@@ -143,3 +143,78 @@ $ kill -SIGUSR2 18940
 3. 结论
 
 > 
+
+
+
+### 案例篇：为什么我的磁盘I/O延迟很高？
+
+1. 概念
+
+> 
+
+2. 涉及到的命令
+
+```shell
+# filetop 主要跟踪内核中文件的读写情况，并输出线程 ID（TID）、读写大小、读写类型以及文件名称。
+# -C 选项表示输出新内容时不清空屏幕 
+$ ./filetop -C
+
+# 查看线程号为 514 的线程，所属的进程
+$ ps -efT | grep 514
+
+# opensnoop 可以动态跟踪内核中的 open 系统调用
+$ opensnoop
+```
+
+3. 结论
+
+
+
+### 案例篇：一个SQL查询要15秒，这是怎么回事？
+
+1. 概念
+
+> 
+
+2. 涉及到的命令
+
+```shell
+# 循环发送curl命令 
+$ while true; do curl http://192.168.0.10:10000/products/geektime; sleep 5; done
+
+# -t表示显示线程，-a表示显示命令行参数
+$ pstree -t -a -p 27458
+
+# 执行 show processlist 命令，来查看当前正在执行的 SQL 语句
+$ mysql> show full processlist;
+```
+
+3. 结论
+
+
+
+### 案例篇：Redis响应严重延迟，如何解决？
+
+1. 概念
+
+> 
+
+2. 涉及到的命令
+
+```shell
+# -f表示跟踪子进程和子线程，-T表示显示系统调用的时长，-tt表示显示跟踪时间
+$ strace -f -T -tt -p 9085
+
+# 由于这两个容器共享同一个网络命名空间，所以我们只需要进入app的网络命名空间即可
+$ PID=$(docker inspect --format {{.State.Pid}} app)
+# -i表示显示网络套接字信息
+$ nsenter --target $PID --net -- lsof -i
+```
+
+3. 结论
+
+> IO性能问题首先可以通过top 查看机器的整体负载情况，一般会出现CPU 的iowait 较高的现象
+> 然后使用 pidstat -d 1 找到读写磁盘较高的进程
+> 然后通过 strace -f -TT 进行跟踪，查看系统读写调用的频率和时间
+> 通过lsof 找到 strace 中的文件描述符对应的文件 opensnoop可以找到对应的问题位置
+> 推测 对应的问题，mysql 案例中的大量读，可能是因为没有建立索引导致的全表查询，从而形成了慢查询的现象。redis 中则是因为 备份文件设置的不合理导致的每次查询都会写磁盘。当然不同的问题还需要结合对应的情况进行分析
